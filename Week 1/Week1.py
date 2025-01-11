@@ -51,7 +51,7 @@ def gather_product_data(total_pages: int):
     return product_ids, best_products, i5_processors_price, i5_processors_count, prices
 
 def write_to_file(filename: str, data: list):
-    """Write a set of data to a file, one item per line."""
+    """Write a list of data to a file, one item per line."""
     with open(filename, "w") as file:
         file.writelines(f"{item}\n" for item in data)
 
