@@ -116,11 +116,11 @@ def task2():
 
     for i in range(10):
         # Enemies move forward
-        for enemy in [E1, E2, E3]:
+        for enemy in enemies:
             enemy.move()
         # Towers Attack
         for tower in [T1, T2, T3, T4, A1, A2]:
-            tower.attack([E1, E2, E3])
+            tower.attack(enemies)
 
     print(f"E1 {E1.x} {E1.y} {E1.points}")
     print(f"E2 {E2.x} {E2.y} {E2.points}")
