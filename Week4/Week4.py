@@ -82,7 +82,7 @@ def main():
         np.array([0, 1])       
     ]
     expected = [
-        np.array([0.8, 0.1]),
+        np.array([0.8, 1]),
         np.array([0.5, 0.5])
     ]
     print("------ Model 1 ------")
