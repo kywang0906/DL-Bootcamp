@@ -30,7 +30,7 @@ def evaluate_model(model, dataset, task_type):
     y = y.numpy()
 
     if task_type == "titanic":
-        # Convert sigmoid output to binary classification
+        # Sigmoid -> binary classification
         y_pred = (y_pred > 0.5).astype(int)
         accuracy = np.mean(y_pred == y) * 100
         print(f"Accuracy: {accuracy}%")
@@ -56,17 +56,16 @@ def main():
         
         if task_type == "weight":
             dataset = MyData('gender-height-weight.csv', task_type)
+            loss_fn = nn.MSELoss()
         else: 
             dataset = MyData('titanic.csv', task_type)
+            loss_fn = nn.BCELoss()
 
         input_size = dataset.X.shape[1]
         output_size = 1
         hidden_layers = [10, 5]
 
         model = NeuralNetwork(input_size, hidden_layers, output_size, task_type)
-
-        # Define loss function & optimizer
-        loss_fn = nn.BCELoss() if task_type == "titanic" else nn.MSELoss()
         optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
         print("------ Before Training ------")
@@ -75,6 +74,7 @@ def main():
         train_model(model, dataset, loss_fn, optimizer, epochs)
         print("------ Start Evaluating ------")
         evaluate_model(model, dataset, task_type)
+        print("\n")
 
 
 if __name__ == "__main__":
