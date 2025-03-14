@@ -36,14 +36,17 @@ class Network:
     def binary_cross_entropy(self, O, E):
         return -np.sum(E * np.log(O) + (1 - E) * np.log(1 - O))
     
-    def backward(self, O, E):
-        mse_derivative = (2/O.size) * (O - E)
+    def backward(self, O, E, loss_function="mse"):
+        if loss_function == "mse":
+            loss_grad = (2/O.size) * (O - E)
+        elif loss_function == "bce":
+            loss_grad = (O - E) / (O * (1 - O))
         for i in reversed(range(len(self.weights))):
             activation_derivative = self.activation(self.inputs[i+1], self.activation_funcs[i], derivative=True)
-            delta = mse_derivative * activation_derivative
+            delta = loss_grad * activation_derivative
             self.grad_weights[i] = np.dot(self.inputs[i].T, delta)
             self.grad_biases[i] = np.sum(delta, axis=0, keepdims=True)
-            mse_derivative = np.dot(delta, self.weights[i].T)
+            loss_grad = np.dot(delta, self.weights[i].T)
     
     def zero_grad(self, learning_rate=0.01):
         for i in range(len(self.weights)):
