@@ -30,7 +30,7 @@ def crawl_board(board_url, board_name):
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
 
-    service = Service('/Users/bella/.wdm/drivers/chromedriver/mac64/134.0.6998.88/chromedriver-mac-arm64/chromedriver')
+    service = Service('./chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.get(board_url)
 
