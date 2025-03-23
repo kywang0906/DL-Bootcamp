@@ -16,7 +16,7 @@ def clean():
         df["Title"] = df["Title"].str.lower()
         df = df[~df["Title"].str.startswith(("re:", "fw:"))]
         # Fix repeated `""` issues
-        df["Title"] = df["Title"].str.replace(r'"+', ' ', regex=True).str.strip()
+        df["Title"] = df["Title"].str.replace(r'[!"#$%&\'()*+,\-./:;<=>?@\\^_`{|}~]', '', regex=True)
 
         cleaned_file_path = os.path.join(CLEANED_FOLDER, file)
         df.to_csv(cleaned_file_path, index=False, encoding="utf-8-sig")
