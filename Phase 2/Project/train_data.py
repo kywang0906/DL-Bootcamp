@@ -75,7 +75,7 @@ def evaluate(model, test_loader, criterion):
             outputs = model(inputs)
             # Calculate loss
             loss = criterion(outputs, labels)
-            total_loss += loss.item() * inputs.size(0) 
+            total_loss += loss.item()
             _, preds = torch.max(outputs, 1)
             # Convert predictions & labels to numpy
             all_preds.extend(preds.numpy())  
@@ -107,7 +107,7 @@ def main():
     print("Training model...")
     train_model(classification_model, train_loader, criterion, optimizer, epochs=50)
     print("Evaluating model...")
-    evaluate(classification_model, test_loader)
+    evaluate(classification_model, test_loader, criterion)
 
 if __name__ == '__main__':
     main()
