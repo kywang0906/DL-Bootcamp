@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>短文本分類預測</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="header">
+        <h1>歡迎使用短文本分類預測</h1>
+    </div>
+    <div class="form-block">
+        <form method="post" action="/api/model/prediction">
+            <label for="title"><strong>輸入一篇文章的標題</strong></label><br>
+            <input type="text" id="title" name="title" required value="{{ original_title if original_title else '' }}">
+            <button type="submit">預測分類</button>
+        </form>
+    </div>
+
+    {% if prediction %}
+    <div class="result-block">
+        <h2>預測結果：<span class="prediction">{{ prediction }}</span></h2>
+        <p>選擇您認為更正確的分類：</p>
+        <form method="post" action="/api/model/feedback">
+            <input type="hidden" name="title" value="{{ original_title }}">
+            {% for label in all_labels %}
+                <button class="label-button" type="submit" name="label" value="{{ label }}">{{ label }}</button>
+            {% endfor %}
+        </form>
+    </div>
+    {% endif %}
+</body>
+</html>
