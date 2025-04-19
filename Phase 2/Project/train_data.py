@@ -29,7 +29,7 @@ class NeuralNet(nn.Module):
         return x
 
 
-def load_model(model_path=SAMPLE_MODEL, vectors_path=SAMPLE_INFERRED_VEC):
+def load_model(model_path=MODEL, vectors_path=INFERRED_VEC):
     if os.path.exists(model_path) and os.path.exists(vectors_path):
         print(f"Loading model from: {model_path}")
         model = Doc2Vec.load(model_path)
@@ -46,45 +46,55 @@ def split_data(inferred_vectors, labels, test_size=0.2):
     y_test = torch.tensor(y_test.values, dtype=torch.long)
     return X_train, X_test, y_train, y_test
 
-def train_model(model, train_loader, criterion, optimizer, epochs=50):
-    model.train()
+def train_and_evaluate(model, train_loader, test_loader, criterion, optimizer, epochs):
     for epoch in range(epochs):
+        # Train Phase
+        model.train()
         running_loss = 0
         for inputs, labels in train_loader:
-            # zero the parameter gradients
             optimizer.zero_grad()
-            # forward + backward + optimize
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
+        avg_train_loss = running_loss / len(train_loader)
 
-        avg_loss = running_loss / len(train_loader)
+        # Evaluating Phase
+        model.eval()
+        total_loss = 0
+        first_match_count = 0
+        second_match_count = 0
+        total_samples = 0
+
+        with torch.no_grad():
+            for inputs, labels in test_loader:
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                total_loss += loss.item()
+                total_samples += labels.size(0)
+
+                top2 = torch.topk(outputs, k=2, dim=1).indices
+                for i in range(labels.size(0)):
+                    true_label = labels[i].item()
+                    top_preds = top2[i].tolist()
+                    if true_label == top_preds[0]:
+                        first_match_count += 1
+                        second_match_count += 1
+                    elif true_label == top_preds[1]:
+                        second_match_count += 1
+
+        avg_test_loss = total_loss / len(test_loader)
+        first_match = first_match_count / total_samples
+        second_match = second_match_count / total_samples
+
+        # === Print All Metrics ===
         print(f"======= Epoch {epoch+1} =======")
-        print(f"Average Loss in Training Data {avg_loss}")
+        print(f"Average Loss in Training Data: {avg_train_loss}")
+        print(f"Average Loss in Test Data: {avg_test_loss}")
+        print(f"First Match: {first_match}")
+        print(f"Second Match: {second_match}")
 
-def evaluate(model, test_loader, criterion):
-    model.eval()
-    all_preds = []
-    all_labels = []
-    total_loss = 0
-
-    with torch.no_grad():
-        for inputs, labels in test_loader:
-            outputs = model(inputs)
-            # Calculate loss
-            loss = criterion(outputs, labels)
-            total_loss += loss.item()
-            _, preds = torch.max(outputs, 1)
-            # Convert predictions & labels to numpy
-            all_preds.extend(preds.numpy())  
-            all_labels.extend(labels.numpy())
-
-    accuracy = accuracy_score(all_labels, all_preds)
-    avg_loss = total_loss / len(test_loader)
-    print(f"Average Loss in Test Data {avg_loss}")
-    print(f"Test Accuracy: {accuracy}")
 
 def main():
     model, inferred_vectors = load_model()
@@ -93,8 +103,8 @@ def main():
     num_classes = len(set(labels))
 
     X_train, X_test, y_train, y_test = split_data(inferred_vectors, labels)
-    train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, shuffle=True)
-    test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size=64, shuffle=False)
+    train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=32, shuffle=True)
+    test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size=32, shuffle=False)
 
     # Initialize the classification model
     input_dim = inferred_vectors.shape[1]
@@ -104,10 +114,11 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(classification_model.parameters(), lr=0.001)
 
-    print("Training model...")
-    train_model(classification_model, train_loader, criterion, optimizer, epochs=50)
-    print("Evaluating model...")
-    evaluate(classification_model, test_loader, criterion)
+    print("Training & Evaluating model...")
+    train_and_evaluate(classification_model, train_loader, test_loader, criterion, optimizer, 30)
+
+    torch.save(classification_model.state_dict(), "classification_model.pth")
+
 
 if __name__ == '__main__':
     main()
