@@ -1,54 +1,42 @@
 import os
 import numpy as np
+import pandas as pd
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from tqdm import tqdm
-import pandas as pd
 
-def load_existing_model(save_path="doc2vec.model"):
-    """
-    Load an existing Doc2Vec model.
-    """
-    if os.path.exists(save_path):
-        print(f"Loading existing model from: {save_path}")
-        model = Doc2Vec.load(save_path)
-        print("Model loaded successfully.")
-        return model
+def preprocess_text(text):
+    return text.strip() if isinstance(text, str) else ""
+
+def load_doc2vec_model(path="doc2vec.model"):
+    if os.path.exists(path):
+        print(f"📦 Loading Doc2Vec model from: {path}")
+        return Doc2Vec.load(path)
     else:
-        print("⚠️ No existing model found.")
-        return None
+        raise FileNotFoundError(f"Model not found at: {path}")
 
-def generate_inferred_vectors(model, train_corpus, vectors_path="inferred_vectors.npy"):
-    """
-    Generate inferred vectors for all documents without multi-threading.
-    """
-    print("Generating inferred vectors without multi-threading...")
-    inferred_vectors = []
-
-    for doc in tqdm(train_corpus, desc="Generating Vectors", total=len(train_corpus)):
-        inferred_vector = model.infer_vector(doc.words)
-        inferred_vectors.append(inferred_vector)
-
-    inferred_vectors = np.array(inferred_vectors)
-
-    # Save inferred vectors to file
-    np.save(vectors_path, inferred_vectors)
-    print(f"Inferred vectors saved to {vectors_path}")
-
-if __name__ == '__main__':
-    # Load the trained model
-    model = load_existing_model("doc2vec.model")
-
-    # Load segmented data
-    print("Titles Ready")
-    df = pd.read_csv("segmented_data2.csv", names=["Label", "Segmented"])
-    df["Segmented"] = df["Segmented"].fillna("")
-
-    print("Tagged Documents Ready")
+def prepare_corpus(filepath="segmented_data_cleaned.csv"):
+    print(f"📄 Loading segmented data from: {filepath}")
+    df = pd.read_csv(filepath, names=["Label", "Segmented"])
+    df["Segmented"] = df["Segmented"].fillna("").map(preprocess_text)
     train_corpus = [
-        TaggedDocument(words=seg.split(), tags=[i])
+        TaggedDocument(words=seg.split(), tags=[str(i)])
         for i, seg in enumerate(df["Segmented"])
     ]
+    print(f"Total documents: {len(train_corpus)}")
+    return train_corpus
 
-    # Generate inferred vectors
-    vectors_path = "inferred_vectors.npy"
-    generate_inferred_vectors(model, train_corpus, vectors_path)
+def generate_and_save_vectors(model, corpus, output_path="inferred_vectors.npy"):
+    print("Generating inferred vectors (epochs=50)...")
+    vectors = []
+
+    for doc in tqdm(corpus, desc="Inferring vectors"):
+        vec = model.infer_vector(doc.words, epochs=50)
+        vectors.append(vec)
+
+    np.save(output_path, np.array(vectors))
+    print(f"Vectors saved to: {output_path}")
+
+if __name__ == "__main__":
+    model = load_doc2vec_model("doc2vec.model")
+    corpus = prepare_corpus("segmented_data_cleaned.csv")
+    generate_and_save_vectors(model, corpus, "inferred_vectors.npy")
