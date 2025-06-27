@@ -1,0 +1,16 @@
+/* 先清掉預設 margin/padding，並讓 #root 滿版 */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* 讓 #root 變成 flex 並置中 */
+#root {
+  display: flex;
+  justify-content: center;  /* 水平置中 */
+  align-items: flex-start;  /* 垂直靠上 */
+  padding: 1rem;            /* 整體留白 */
+  box-sizing: border-box;
+  background-color: #f8f9fa; /* 可選：背景色 */
+}
